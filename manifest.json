@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "elevenlabs-conversational-ai",
+	"name": "ElevenLabs Conversational AI Plugin",
+	"version": "0.0.4",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "ElevenLabs Conversational AI Plugin for Obsidian",
+	"author": "Arti8",
+	"authorUrl": "https://arti8.com",
+	"fundingUrl": "https://arti8.com",
 	"isDesktopOnly": false
 }

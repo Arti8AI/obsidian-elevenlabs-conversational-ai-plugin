@@ -1,89 +1,83 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Conversation } from "@11labs/client";
+import { App, Modal, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+/**
+ * Gets the path of an existing note
+ */
+export function getNotePath(app: App, title: string): string | null {
+	const fileName = title.replace(/[/\\?%*:|"<>]/g, "-").trim() + ".md";
+	const files = app.vault.getFiles();
+	const file = files.find((f) => f.name === fileName);
+	return file ? file.path : null;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+/**
+ * Reads the content of a note
+ * @param app - Obsidian App instance
+ * @param title - Note title
+ * @returns Promise<string | null> - Note content or null if not found
+ */
+export async function readNote(
+	app: App,
+	title: string
+): Promise<string | null> {
+	const path = getNotePath(app, title);
+	if (!path) return null;
+
+	const file = app.vault.getAbstractFileByPath(path);
+	if (file instanceof TFile) {
+		return await app.vault.read(file);
+	}
+	return null;
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+interface ElevenLabsConversationalAISettings {
+	agentId: string;
+}
+
+const DEFAULT_SETTINGS: ElevenLabsConversationalAISettings = {
+	agentId: "",
+};
+
+export default class ElevenLabsConversationalAIPlugin extends Plugin {
+	settings: ElevenLabsConversationalAISettings;
 
 	async onload() {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		const ribbonIconEl = this.addRibbonIcon(
+			"microphone",
+			"ElevenLabsConversationalAI Plugin",
+			(evt: MouseEvent) => {
+				// Called when the user clicks the icon.
+				new ElevenLabsConversationalAIModal(this.app, this.settings).open();
+			}
+		);
 		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		ribbonIconEl.addClass("my-plugin-ribbon-class");
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: "open-voice-ai-agent",
+			name: "Open ElevenLabs Conversational AI",
 			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
+				new ElevenLabsConversationalAIModal(this.app, this.settings).open();
+			},
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.addSettingTab(new ElevenLabsConversationalAISettingTab(this.app, this));
 	}
 
-	onunload() {
-
-	}
+	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData()
+		);
 	}
 
 	async saveSettings() {
@@ -91,44 +85,158 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
+class ElevenLabsConversationalAIModal extends Modal {
+	private conversation: Conversation | null;
+	private settings: ElevenLabsConversationalAISettings;
+
+	constructor(app: App, settings: ElevenLabsConversationalAISettings) {
 		super(app);
+		this.settings = settings;
+		this.conversation = null;
 	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
+	async onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+
+		// Set up the modal content
+		contentEl.createEl("h1", {
+			text: "ElevenLabs Conversational AI",
+			attr: { style: "text-align: center;" },
+		});
+
+		const buttonContainer = contentEl.createDiv({
+			attr: { style: "margin-bottom: 20px; text-align: center;" },
+		});
+
+		const startButton = buttonContainer.createEl("button", {
+			text: "Start Conversation",
+			attr: { style: "padding: 10px 20px; margin: 5px;" },
+		});
+		const stopButton = buttonContainer.createEl("button", {
+			text: "Stop Conversation",
+			attr: { style: "padding: 10px 20px; margin: 5px;", disabled: true },
+		});
+
+		const statusContainer = contentEl.createDiv({
+			attr: { style: "font-size: 18px; text-align: center;" },
+		});
+		statusContainer.createEl("p", { text: "Status: " }).createEl("span", {
+			text: "Disconnected",
+			attr: { id: "connectionStatus" },
+		});
+		statusContainer.createEl("p", { text: "Agent is " }).createEl("span", {
+			text: "listening",
+			attr: { id: "agentStatus" },
+		});
+
+		const connectionStatus = contentEl.querySelector("#connectionStatus");
+		const agentStatus = contentEl.querySelector("#agentStatus");
+
+		const startConversation = async () => {
+			try {
+				// Request microphone permission
+				await navigator.mediaDevices.getUserMedia({ audio: true });
+
+				// Start the conversation
+				this.conversation = await Conversation.startSession({
+					agentId: this.settings.agentId,
+					clientTools: {
+						saveNote: async ({ title, message }) => {
+							console.log(message);
+							await this.app.vault.create(`${title}.md`, message);
+						},
+						getNote: async ({ noteName }) => {
+							console.log(noteName);
+							const content = await readNote(this.app, noteName);
+							if (content) {
+								console.log(content);
+								return content;
+							}
+							return "Note not found";
+						},
+                        getListOfNotes: async () => {
+                            const files = this.app.vault.getFiles();
+                            const notes = files.map(f => f.name.replace(".md", "")).join(", ");
+                            console.log(notes);
+                            return notes;
+                        }
+					},
+					onConnect: () => {
+						if (connectionStatus) {
+							connectionStatus.textContent = "Connected";
+						}
+						startButton.disabled = true;
+						stopButton.disabled = false;
+					},
+					onDisconnect: () => {
+						if (connectionStatus) {
+							connectionStatus.textContent = "Disconnected";
+						}
+						startButton.disabled = false;
+						stopButton.disabled = true;
+					},
+					onError: (error) => {
+						console.error("Error:", error);
+					},
+					onModeChange: (mode) => {
+						if (agentStatus) {
+							agentStatus.textContent =
+								mode.mode === "speaking"
+									? "speaking"
+									: "listening";
+						}
+					},
+				});
+			} catch (error) {
+				console.error("Failed to start conversation:", error);
+			}
+		};
+
+		const stopConversation = async () => {
+			if (this.conversation) {
+				await this.conversation.endSession();
+				this.conversation = null;
+			}
+		};
+
+		startButton.addEventListener("click", startConversation);
+		stopButton.addEventListener("click", stopConversation);
 	}
 
-	onClose() {
-		const {contentEl} = this;
+	async onClose() {
+		const { contentEl } = this;
+		if (this.conversation) {
+			await this.conversation.endSession();
+		}
 		contentEl.empty();
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class ElevenLabsConversationalAISettingTab extends PluginSettingTab {
+	plugin: ElevenLabsConversationalAIPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ElevenLabsConversationalAIPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this;
 
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+			.setName("ElevenLabs Agent Id")
+			.setDesc("ElevenLabs Agent Id")
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your Agent Id")
+					.setValue(this.plugin.settings.agentId)
+					.onChange(async (value) => {
+						this.plugin.settings.agentId = value;
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }

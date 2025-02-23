@@ -1,0 +1,18 @@
+{
+    "versions": [
+        {
+            "version": "0.0.4",
+            "minAppVersion": "1.0.0",
+            "downloadUrl": "https://github.com/Arti8AI/obsidian_elevenlabs_conversational_ai/releases/download/0.0.4/elevenlabs_conversational_ai-0.0.4.zip",
+            "manifest": {
+                "author": "Arti8",
+                "description": "ElevenLabs Conversational AI Plugin for Obsidian",
+                "id": "elevenlabs-conversational-ai",
+                "isDesktopOnly": false,
+                "minAppVersion": "1.0.0",
+                "name": "obsidian-elevenlabs-conversational-ai-plugin",
+                "version": "0.0.4"
+            }
+        }
+    ]
+}
