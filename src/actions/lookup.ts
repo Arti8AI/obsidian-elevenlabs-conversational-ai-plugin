@@ -1,11 +1,43 @@
 import { App, TFile } from "obsidian";
 
+/**
+ * Represents a search result with scoring and match type information.
+ * Used internally by the fuzzy search algorithm.
+ */
 interface SearchResult {
+    /** The matched file object */
     file: TFile;
+    /** Numeric score indicating match quality (0-100) */
     score: number;
+    /** Type of match found */
     matchType: 'exact' | 'partial' | 'fuzzy';
 }
 
+/**
+ * Intelligent note lookup with fuzzy search capabilities.
+ * 
+ * Attempts to find notes using multiple search strategies:
+ * 1. Exact title match (highest priority)
+ * 2. Sanitized title match (handles special characters)
+ * 3. Partial text matching (substring searches)
+ * 4. Fuzzy matching (similar text with typos)
+ * 
+ * @param app - Obsidian App instance for vault access
+ * @param title - The note title to search for
+ * @returns Promise resolving to the file path of the best match, or null if no match found
+ * 
+ * @example
+ * ```typescript
+ * // Exact match
+ * const path = await lookupNote(app, "Daily Notes");
+ * 
+ * // Fuzzy match (finds "Daily Notes" even with typos)
+ * const path = await lookupNote(app, "Daly Nots");
+ * 
+ * // Partial match
+ * const path = await lookupNote(app, "Daily");
+ * ```
+ */
 export async function lookupNote(app: App, title: string): Promise<string | null> {
     if (!title || !title.trim()) {
         return null;
@@ -30,6 +62,13 @@ export async function lookupNote(app: App, title: string): Promise<string | null
     return bestMatch.file.path;
 }
 
+/**
+ * Performs multi-strategy search on the provided files.
+ * 
+ * @param files - Array of markdown files to search through
+ * @param searchTitle - The title to search for
+ * @returns Array of search results sorted by relevance (best first)
+ */
 function searchNotes(files: TFile[], searchTitle: string): SearchResult[] {
     const results: SearchResult[] = [];
     const searchLower = searchTitle.toLowerCase();
@@ -87,6 +126,10 @@ function searchNotes(files: TFile[], searchTitle: string): SearchResult[] {
     return results.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Sanitizes a search term by removing special characters and whitespace.
+ * Used for normalized comparisons.
+ */
 function sanitizeSearchTerm(term: string): string {
     return term
         .toLowerCase()
@@ -94,6 +137,10 @@ function sanitizeSearchTerm(term: string): string {
         .trim();
 }
 
+/**
+ * Calculates partial match score based on substring matching and word boundaries.
+ * Higher scores for better matches (beginning of string, word boundaries).
+ */
 function calculatePartialMatch(fileName: string, searchTerm: string): number {
     // Check if search term is contained in filename
     if (fileName.includes(searchTerm)) {
@@ -128,6 +175,9 @@ function calculatePartialMatch(fileName: string, searchTerm: string): number {
     return 0;
 }
 
+/**
+ * Calculates score for word-by-word matching between file and search terms.
+ */
 function calculateWordMatch(fileWords: string[], searchWords: string[]): number {
     let matches = 0;
     let totalWords = searchWords.length;
@@ -150,6 +200,10 @@ function calculateWordMatch(fileWords: string[], searchWords: string[]): number 
     return Math.round(50 * matchRatio + 10); // Base score of 10, up to 60
 }
 
+/**
+ * Calculates fuzzy match score using Levenshtein distance algorithm.
+ * Includes bonuses for matching prefixes and suffixes.
+ */
 function calculateFuzzyMatch(fileName: string, searchTerm: string): number {
     // Simple fuzzy matching algorithm based on character similarity
     if (fileName.length === 0 || searchTerm.length === 0) {
@@ -187,6 +241,10 @@ function calculateFuzzyMatch(fileName: string, searchTerm: string): number {
     return Math.min(100, Math.round(similarity + prefixBonus + suffixBonus));
 }
 
+/**
+ * Calculates Levenshtein distance between two strings.
+ * Used for fuzzy matching to handle typos and character substitutions.
+ */
 function levenshteinDistance(str1: string, str2: string): number {
     const matrix = [];
     
@@ -217,7 +275,26 @@ function levenshteinDistance(str1: string, str2: string): number {
     return matrix[str2.length][str1.length];
 }
 
-// Additional helper function for advanced search
+/**
+ * Advanced search function that searches both note titles and content.
+ * 
+ * Provides comprehensive search across the entire vault with relevance scoring.
+ * Useful for finding notes that mention specific topics or contain certain text.
+ * 
+ * @param app - Obsidian App instance for vault access
+ * @param searchTerm - The term to search for in titles and content
+ * @param maxResults - Maximum number of results to return (default: 10)
+ * @returns Promise resolving to array of matching files, sorted by relevance
+ * 
+ * @example
+ * ```typescript
+ * // Find all notes mentioning "machine learning"
+ * const files = await searchNotesByContent(app, "machine learning", 5);
+ * 
+ * // Search for project-related notes
+ * const files = await searchNotesByContent(app, "project", 20);
+ * ```
+ */
 export async function searchNotesByContent(app: App, searchTerm: string, maxResults: number = 10): Promise<TFile[]> {
     const allFiles = app.vault.getFiles().filter(f => f.extension === 'md');
     const results: { file: TFile; relevance: number }[] = [];
