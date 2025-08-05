@@ -4,20 +4,51 @@ import { EnvironmentSettings, defaultEnvironmentSettings } from "./components/en
 import { SettingsTab } from "./views/sc_settings_tab";
 import { ConversationOverlay } from "./views/on_open_overlay";
 import { SmartNotice } from "./views/notices";
+import { PerformanceManager } from "./components/performance_manager";
+import { BackupManager } from "./components/backup_manager";
 
 export default class ElevenLabsConversationalAIPlugin extends Plugin {
     settings: ElevenLabsSettings;
     environmentSettings: EnvironmentSettings;
+    private performanceManager: PerformanceManager;
+    private backupManager: BackupManager;
+    private isInitialized = false;
 
     async onload() {
-        await this.loadSettings();
-        this.setupRibbonIcon();
-        this.addCommands();
-        this.addSettingTab(new SettingsTab(this.app, this));
+        console.log('Loading ElevenLabs Conversational AI Plugin...');
         
-        // Initialize additional features
-        this.initializeKeyboardShortcuts();
-        this.setupPeriodicCleanup();
+        try {
+            // Initialize managers
+            this.performanceManager = new PerformanceManager(this.app);
+            this.backupManager = new BackupManager(this.app, this.manifest.version);
+
+            // Load settings and perform migrations
+            await this.loadSettings();
+            
+            // Setup core functionality
+            this.setupRibbonIcon();
+            this.addCommands();
+            this.addSettingTab(new SettingsTab(this.app, this));
+            
+            // Initialize additional features
+            this.initializeKeyboardShortcuts();
+            this.setupPeriodicCleanup();
+            this.setupAccessibilityFeatures();
+            this.performStartupOptimizations();
+
+            // Create automatic backup if needed
+            this.createAutomaticBackupIfNeeded();
+
+            // Register event listeners
+            this.registerVaultEvents();
+
+            this.isInitialized = true;
+            console.log('ElevenLabs Conversational AI Plugin loaded successfully');
+
+        } catch (error) {
+            console.error('Failed to load ElevenLabs Conversational AI Plugin:', error);
+            SmartNotice.error("Failed to initialize plugin. Check console for details.");
+        }
     }
 
     private setupRibbonIcon() {
@@ -33,6 +64,10 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
             }
         );
         ribbonIconEl.addClass("elevenlabs-ribbon-icon");
+        
+        // Add accessibility attributes
+        ribbonIconEl.setAttribute('aria-label', 'Open ElevenLabs Conversational AI');
+        ribbonIconEl.setAttribute('role', 'button');
     }
 
     private addCommands() {
@@ -100,6 +135,48 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
             name: "Export Last Conversation",
             callback: () => {
                 this.exportLastConversation();
+            }
+        });
+
+        // Performance and maintenance commands
+        this.addCommand({
+            id: "optimize-performance",
+            name: "Optimize Plugin Performance",
+            callback: async () => {
+                await this.optimizePerformance();
+            }
+        });
+
+        this.addCommand({
+            id: "clear-cache",
+            name: "Clear Plugin Cache",
+            callback: () => {
+                this.clearCache();
+            }
+        });
+
+        // Backup and restore commands
+        this.addCommand({
+            id: "export-backup",
+            name: "Export Plugin Backup",
+            callback: async () => {
+                await this.exportBackup();
+            }
+        });
+
+        this.addCommand({
+            id: "import-backup",
+            name: "Import Plugin Backup",
+            callback: async () => {
+                await this.importBackup();
+            }
+        });
+
+        this.addCommand({
+            id: "quick-restore",
+            name: "Quick Restore from Recent Backup",
+            callback: async () => {
+                await this.quickRestore();
             }
         });
 
@@ -224,6 +301,206 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
         return content;
     }
 
+    // Performance Management
+    private async optimizePerformance() {
+        try {
+            SmartNotice.info("Optimizing plugin performance...");
+            await this.performanceManager.optimizeForVaultSize();
+            
+            const metrics = this.performanceManager.getPerformanceMetrics();
+            const cacheStats = this.performanceManager.getCacheStats();
+            
+            const message = `Performance optimization completed!
+Cache: ${cacheStats.entries} entries, ${(cacheStats.size / 1024 / 1024).toFixed(2)}MB
+Hit Rate: ${cacheStats.hitRate.toFixed(1)}%`;
+            
+            SmartNotice.success(message);
+        } catch (error) {
+            SmartNotice.error("Performance optimization failed");
+            console.error('Performance optimization error:', error);
+        }
+    }
+
+    private clearCache() {
+        try {
+            this.performanceManager.cacheClear();
+            SmartNotice.success("Plugin cache cleared successfully");
+        } catch (error) {
+            SmartNotice.error("Failed to clear cache");
+            console.error('Cache clear error:', error);
+        }
+    }
+
+    // Backup and Restore
+    private async exportBackup() {
+        try {
+            const fileName = await this.backupManager.exportBackup(this.settings, this.environmentSettings);
+            SmartNotice.success(`Backup exported successfully: ${fileName}`);
+        } catch (error) {
+            SmartNotice.error("Failed to export backup");
+            console.error('Backup export error:', error);
+        }
+    }
+
+    private async importBackup() {
+        // Simple file picker simulation - in real implementation, you'd use a file picker
+        const backupFiles = this.backupManager.getBackupFiles();
+        
+        if (backupFiles.length === 0) {
+            SmartNotice.error("No backup files found in vault");
+            return;
+        }
+
+        try {
+            // For demo, use the most recent backup
+            const result = await this.backupManager.importBackup(backupFiles[0].path);
+            
+            if (result.success) {
+                SmartNotice.success(result.message);
+                if (result.warnings.length > 0) {
+                    console.warn('Backup restore warnings:', result.warnings);
+                }
+            } else {
+                SmartNotice.error(result.message);
+            }
+        } catch (error) {
+            SmartNotice.error("Failed to import backup");
+            console.error('Backup import error:', error);
+        }
+    }
+
+    private async quickRestore() {
+        try {
+            const result = await this.backupManager.quickRestore();
+            if (result.success) {
+                SmartNotice.success("Settings restored from recent backup");
+            } else {
+                SmartNotice.error(result.message);
+            }
+        } catch (error) {
+            SmartNotice.error("Quick restore failed");
+            console.error('Quick restore error:', error);
+        }
+    }
+
+    private async createAutomaticBackupIfNeeded() {
+        try {
+            const fileName = await this.backupManager.createAutomaticBackup(this.settings, this.environmentSettings);
+            if (fileName && this.environmentSettings.isDebugMode) {
+                console.log(`Automatic backup created: ${fileName}`);
+            }
+        } catch (error) {
+            console.error('Automatic backup failed:', error);
+        }
+    }
+
+    // Accessibility Features
+    private setupAccessibilityFeatures() {
+        // Add ARIA labels and keyboard navigation support
+        this.app.workspace.onLayoutReady(() => {
+            this.enhanceAccessibility();
+        });
+
+        // Add high contrast mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-contrast: high)').matches) {
+            document.body.addClass('elevenlabs-high-contrast');
+        }
+
+        // Add reduced motion detection
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.body.addClass('elevenlabs-reduced-motion');
+        }
+    }
+
+    private enhanceAccessibility() {
+        // Add screen reader announcements for important actions
+        this.registerDomEvent(document, 'keydown', (evt: KeyboardEvent) => {
+            if (this.settings.enableKeyboardShortcuts) {
+                this.handleAccessibilityKeyboard(evt);
+            }
+        });
+    }
+
+    private handleAccessibilityKeyboard(evt: KeyboardEvent) {
+        // Add keyboard shortcuts for accessibility
+        if (evt.ctrlKey && evt.shiftKey) {
+            switch (evt.key) {
+                case 'v':
+                case 'V':
+                    evt.preventDefault();
+                    this.announceToScreenReader("Opening ElevenLabs Conversational AI");
+                    if (!this.settings.agentId) {
+                        this.announceToScreenReader("Agent ID not configured. Please check settings.");
+                        SmartNotice.error("Please configure your Agent ID in settings");
+                        return;
+                    }
+                    new ConversationOverlay(this.app, this.settings.agentId).open();
+                    break;
+                case 'd':
+                case 'D':
+                    evt.preventDefault();
+                    this.announceToScreenReader("Opening Daily Note Assistant");
+                    this.createDailyNoteWithAI();
+                    break;
+            }
+        }
+    }
+
+    private announceToScreenReader(message: string) {
+        // Create a live region for screen reader announcements
+        let liveRegion = document.getElementById('elevenlabs-live-region');
+        if (!liveRegion) {
+            liveRegion = document.createElement('div');
+            liveRegion.id = 'elevenlabs-live-region';
+            liveRegion.setAttribute('aria-live', 'polite');
+            liveRegion.setAttribute('aria-atomic', 'true');
+            liveRegion.style.position = 'absolute';
+            liveRegion.style.left = '-10000px';
+            liveRegion.style.width = '1px';
+            liveRegion.style.height = '1px';
+            liveRegion.style.overflow = 'hidden';
+            document.body.appendChild(liveRegion);
+        }
+        
+        liveRegion.textContent = message;
+        
+        // Clear after announcement
+        setTimeout(() => {
+            liveRegion!.textContent = '';
+        }, 1000);
+    }
+
+    // Event Handlers
+    private registerVaultEvents() {
+        // Handle file changes for performance optimization
+        this.registerEvent(
+            this.app.vault.on('modify', (file) => {
+                if (file instanceof TFile && file.extension === 'md') {
+                    this.performanceManager.scheduleEmbeddingUpdate(file);
+                }
+            })
+        );
+
+        this.registerEvent(
+            this.app.vault.on('delete', (file) => {
+                if (file instanceof TFile && file.extension === 'md') {
+                    // Handle file deletion in performance manager
+                    this.performanceManager.cacheDelete(`embedding_${file.path}`);
+                }
+            })
+        );
+
+        this.registerEvent(
+            this.app.vault.on('rename', (file, oldPath) => {
+                if (file instanceof TFile && file.extension === 'md') {
+                    // Handle file rename
+                    this.performanceManager.cacheDelete(`embedding_${oldPath}`);
+                    this.performanceManager.scheduleEmbeddingUpdate(file);
+                }
+            })
+        );
+    }
+
     private initializeKeyboardShortcuts() {
         if (!this.settings.enableKeyboardShortcuts) {
             return;
@@ -258,8 +535,32 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
         this.registerInterval(
             window.setInterval(() => {
                 this.cleanupConversationHistory();
+                this.performanceManager.scheduleCacheCleanup();
             }, 24 * 60 * 60 * 1000) // Run daily
         );
+
+        // Weekly backup cleanup
+        this.registerInterval(
+            window.setInterval(() => {
+                this.backupManager.cleanupOldBackups(this.settings.maxHistorySize / 10);
+            }, 7 * 24 * 60 * 60 * 1000) // Run weekly
+        );
+    }
+
+    private async performStartupOptimizations() {
+        try {
+            // Optimize for vault size
+            await this.performanceManager.optimizeForVaultSize();
+            
+            // Clean up old backups if needed
+            const deletedCount = await this.backupManager.cleanupOldBackups();
+            
+            if (this.environmentSettings.isDebugMode) {
+                console.log(`Startup optimizations completed. Deleted ${deletedCount} old backups.`);
+            }
+        } catch (error) {
+            console.error('Startup optimizations failed:', error);
+        }
     }
 
     private cleanupConversationHistory() {
@@ -327,7 +628,26 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
     }
 
     async onunload() {
-        // Clean up any resources
-        console.log('ElevenLabs Conversational AI plugin unloaded');
+        try {
+            console.log('Unloading ElevenLabs Conversational AI Plugin...');
+            
+            // Clean up managers
+            if (this.performanceManager) {
+                this.performanceManager.cleanup();
+            }
+
+            // Remove accessibility enhancements
+            const liveRegion = document.getElementById('elevenlabs-live-region');
+            if (liveRegion) {
+                liveRegion.remove();
+            }
+
+            // Remove CSS classes
+            document.body.removeClass('elevenlabs-high-contrast', 'elevenlabs-reduced-motion');
+
+            console.log('ElevenLabs Conversational AI Plugin unloaded successfully');
+        } catch (error) {
+            console.error('Error during plugin unload:', error);
+        }
     }
 }
