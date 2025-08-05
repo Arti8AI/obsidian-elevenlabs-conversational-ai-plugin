@@ -45,7 +45,7 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
         }
 
         try {
-            new ConversationOverlay(this.app, this.settings.agentId).open();
+            new ConversationOverlay(this.app, this.settings.agentId, this.environmentSettings).open();
         } catch (error) {
             SmartNotice.error("Failed to open conversation interface");
             console.error("Error opening conversation overlay:", error);
