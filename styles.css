@@ -1,8 +1,100 @@
-/*
+/* ElevenLabs Conversational AI Plugin Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* Ribbon Icon */
+.elevenlabs-ribbon-icon {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
 
-If your plugin does not need CSS, delete this file.
+.elevenlabs-ribbon-icon:hover {
+    opacity: 1;
+}
 
-*/
+/* Modal Layout */
+.modal .modal-content {
+    padding: 20px;
+    max-width: 500px;
+    text-align: center;
+}
+
+/* Controls Container */
+.controls-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.controls-container button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+}
+
+.controls-container button:not(:disabled) {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.controls-container button:not(:disabled):hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+.controls-container button:disabled {
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Status Container */
+.status-container {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.status-container p {
+    margin: 8px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-container p:first-child {
+    color: var(--text-accent);
+}
+
+.status-container p:last-child {
+    color: var(--text-muted);
+}
+
+/* Header */
+.modal h1 {
+    color: var(--text-normal);
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .controls-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .controls-container button {
+        width: 100%;
+        max-width: 200px;
+    }
+}

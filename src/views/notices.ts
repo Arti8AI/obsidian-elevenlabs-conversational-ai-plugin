@@ -1,15 +1,23 @@
 import { Notice } from "obsidian";
 
 export class SmartNotice {
-    static success(message: string, timeout = 3000) {
-        new Notice(`✓ ${message}`, timeout);
+    private static defaultDuration = 5000;
+    
+    static success(message: string, duration?: number): void {
+        new Notice(`✅ ${message}`, duration || this.defaultDuration);
     }
-
-    static error(message: string, timeout = 5000) {
-        new Notice(`⚠ ${message}`, timeout);
+    
+    static error(message: string, duration?: number): void {
+        new Notice(`❌ ${message}`, duration || this.defaultDuration);
+        console.error(`[ElevenLabs Plugin] ${message}`);
     }
-
-    static info(message: string, timeout = 4000) {
-        new Notice(`ℹ ${message}`, timeout);
+    
+    static info(message: string, duration?: number): void {
+        new Notice(`ℹ️ ${message}`, duration || this.defaultDuration);
+    }
+    
+    static warning(message: string, duration?: number): void {
+        new Notice(`⚠️ ${message}`, duration || this.defaultDuration);
+        console.warn(`[ElevenLabs Plugin] ${message}`);
     }
 }
