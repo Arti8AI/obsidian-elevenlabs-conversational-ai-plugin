@@ -92,6 +92,7 @@ If you encounter issues:
 
 ## Development
 
+### Contributing
 If you want to contribute to the plugin:
 
 1. Clone the repository
@@ -99,6 +100,25 @@ If you want to contribute to the plugin:
 3. Run `npm run dev` to start compilation in watch mode
 4. Make your changes
 5. Build with `npm run build`
+
+### Running Tests
+```bash
+npm test                # Run tests once
+npm run test:watch      # Run tests in watch mode
+```
+
+### Code Quality
+```bash
+npm run lint            # Run ESLint
+npm run build          # Type check and build
+```
+
+### Continuous Integration
+All pull requests automatically run:
+- ESLint linting
+- TypeScript type checking  
+- Jest tests
+- Build verification
 
 ## Support
 
