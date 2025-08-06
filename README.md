@@ -387,10 +387,32 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ## 🎉 **CONCLUSION: THE ULTIMATE OBSIDIAN AI COMPANION**
+### Contributing
+If you want to contribute to the plugin:
 
 This plugin represents **the culmination of modern AI technology** integrated seamlessly into the Obsidian ecosystem. With over **50+ advanced features**, **enterprise-grade performance**, and **comprehensive plugin integrations**, it transforms Obsidian from a note-taking app into a **complete AI-powered knowledge management platform**.
 
 **🚀 Ready to revolutionize your knowledge work?**
+### Running Tests
+```bash
+npm test                # Run tests once
+npm run test:watch      # Run tests in watch mode
+```
+
+### Code Quality
+```bash
+npm run lint            # Run ESLint
+npm run build          # Type check and build
+```
+
+### Continuous Integration
+All pull requests automatically run:
+- ESLint linting
+- TypeScript type checking  
+- Jest tests
+- Build verification
+
+## Support
 
 **Transform your note-taking with the most advanced AI plugin ever created for Obsidian!**
 
