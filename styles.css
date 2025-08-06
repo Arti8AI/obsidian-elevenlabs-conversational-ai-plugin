@@ -675,3 +675,173 @@
 .transcript-container {
     scroll-behavior: smooth;
 }
+
+/* Mobile optimizations */
+.elevenlabs-mobile .elevenlabs-conversation-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+    padding: 10px;
+}
+
+.elevenlabs-mobile-optimized {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.elevenlabs-large-buttons button {
+    min-height: 48px;
+    min-width: 48px;
+    font-size: 1.1em;
+    padding: 12px 20px;
+}
+
+.elevenlabs-simplified-ui .elevenlabs-session-history {
+    display: none;
+}
+
+.elevenlabs-simplified-ui .status-details {
+    display: none;
+}
+
+.voice-btn-small {
+    width: 40px;
+    height: 40px;
+    font-size: 0.8em;
+}
+
+.voice-btn-medium {
+    width: 50px;
+    height: 50px;
+    font-size: 1em;
+}
+
+.voice-btn-large {
+    width: 60px;
+    height: 60px;
+    font-size: 1.2em;
+}
+
+.elevenlabs-touch-area {
+    min-height: 44px;
+    min-width: 44px;
+    position: relative;
+}
+
+.elevenlabs-touch-area.touch-active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    animation: touch-ripple 0.3s ease-out;
+}
+
+@keyframes touch-ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+.elevenlabs-mobile-context-menu {
+    position: fixed;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+}
+
+.elevenlabs-mobile-context-menu button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 0.9em;
+    min-width: 60px;
+}
+
+.elevenlabs-keyboard-visible .elevenlabs-conversation-modal {
+    height: 50vh;
+}
+
+/* Touch gesture indicators */
+.elevenlabs-swipe-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.8);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    pointer-events: none;
+    z-index: 1001;
+    animation: swipe-hint 2s infinite;
+}
+
+@keyframes swipe-hint {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 480px) {
+    .elevenlabs-conversation-modal .elevenlabs-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .elevenlabs-conversation-modal .elevenlabs-quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .elevenlabs-conversation-modal .elevenlabs-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .elevenlabs-conversation-modal .elevenlabs-transcript {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+    .elevenlabs-conversation-modal {
+        height: 100vh;
+        overflow-y: auto;
+    }
+    
+    .elevenlabs-conversation-modal .elevenlabs-transcript {
+        max-height: 40vh;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .elevenlabs-conversation-modal button {
+        border-width: 0.5px;
+    }
+    
+    .elevenlabs-conversation-modal .status-indicator {
+        width: 6px;
+        height: 6px;
+    }
+}

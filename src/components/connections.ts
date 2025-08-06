@@ -2,6 +2,8 @@ import { Conversation } from "@11labs/client";
 import { App, TFile, TFolder } from "obsidian";
 import { lookupNote } from "src/actions/lookup";
 import { VectorEmbeddingsManager, SearchResult } from "./vector_embeddings";
+import { AnalyticsEngine } from "./analytics_engine";
+import { PluginIntegrationsManager } from "./plugin_integrations";
 
 export interface ConnectionCallbacks {
     onConnect: () => void;
@@ -24,10 +26,14 @@ export class ConnectionManager {
     private app: App;
     private agentId: string;
     private vectorEmbeddings: VectorEmbeddingsManager;
+    private analytics?: AnalyticsEngine;
+    private pluginIntegrations?: PluginIntegrationsManager;
     
-    constructor(app: App, agentId: string) {
+    constructor(app: App, agentId: string, analytics?: AnalyticsEngine, pluginIntegrations?: PluginIntegrationsManager) {
         this.app = app;
         this.agentId = agentId;
+        this.analytics = analytics;
+        this.pluginIntegrations = pluginIntegrations;
         this.vectorEmbeddings = new VectorEmbeddingsManager(app);
         
         // Initialize embeddings in the background

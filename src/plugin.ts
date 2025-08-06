@@ -6,12 +6,16 @@ import { ConversationOverlay } from "./views/on_open_overlay";
 import { SmartNotice } from "./views/notices";
 import { PerformanceManager } from "./components/performance_manager";
 import { BackupManager } from "./components/backup_manager";
+import { AnalyticsEngine } from "./components/analytics_engine";
+import { PluginIntegrationsManager } from "./components/plugin_integrations";
 
 export default class ElevenLabsConversationalAIPlugin extends Plugin {
     settings: ElevenLabsSettings;
     environmentSettings: EnvironmentSettings;
     private performanceManager: PerformanceManager;
     private backupManager: BackupManager;
+    private analyticsEngine: AnalyticsEngine;
+    private pluginIntegrations: PluginIntegrationsManager;
     private isInitialized = false;
 
     async onload() {
@@ -21,6 +25,8 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
             // Initialize managers
             this.performanceManager = new PerformanceManager(this.app);
             this.backupManager = new BackupManager(this.app, this.manifest.version);
+            this.analyticsEngine = new AnalyticsEngine(this.app);
+            this.pluginIntegrations = new PluginIntegrationsManager(this.app);
 
             // Load settings and perform migrations
             await this.loadSettings();
@@ -177,6 +183,72 @@ export default class ElevenLabsConversationalAIPlugin extends Plugin {
             name: "Quick Restore from Recent Backup",
             callback: async () => {
                 await this.quickRestore();
+            }
+        });
+
+        // Analytics commands
+        this.addCommand({
+            id: "show-analytics-dashboard",
+            name: "Show Analytics Dashboard",
+            callback: () => {
+                this.showAnalyticsDashboard();
+            }
+        });
+
+        this.addCommand({
+            id: "export-analytics-report",
+            name: "Export Analytics Report",
+            callback: () => {
+                this.exportAnalyticsReport();
+            }
+        });
+
+        this.addCommand({
+            id: "clear-analytics-data",
+            name: "Clear Analytics Data",
+            callback: () => {
+                this.clearAnalyticsData();
+            }
+        });
+
+        // Plugin integration commands
+        this.addCommand({
+            id: "show-plugin-integrations",
+            name: "Show Plugin Integrations",
+            callback: () => {
+                this.showPluginIntegrations();
+            }
+        });
+
+        this.addCommand({
+            id: "refresh-integrations",
+            name: "Refresh Plugin Integrations",
+            callback: () => {
+                this.refreshPluginIntegrations();
+            }
+        });
+
+        this.addCommand({
+            id: "dataview-query",
+            name: "Execute Dataview Query",
+            callback: () => {
+                this.executeDataviewQuery();
+            }
+        });
+
+        this.addCommand({
+            id: "show-available-templates",
+            name: "Show Available Templates",
+            callback: () => {
+                this.showAvailableTemplates();
+            }
+        });
+
+        this.addCommand({
+            id: "show-tasks-overview",
+            name: "Show Tasks Overview",
+            callback: () => {
+                this.showTasksOverview();
             }
         });
 
@@ -625,6 +697,113 @@ Hit Rate: ${cacheStats.hitRate.toFixed(1)}%`;
             settings: this.settings,
             environmentSettings: this.environmentSettings
         });
+    }
+
+    // Analytics Methods
+    private showAnalyticsDashboard(): void {
+        const analytics = this.analyticsEngine.getAnalyticsDashboard();
+        const summary = this.analyticsEngine.getUsageSummary();
+        
+        let content = `# 📊 ElevenLabs AI Analytics Dashboard\n\n`;
+        content += `## Quick Summary\n`;
+        content += `- **Sessions this week:** ${summary.sessionsThisWeek}\n`;
+        content += `- **Notes created:** ${summary.notesCreatedThisWeek}\n`;
+        content += `- **Productivity score:** ${summary.productivityScore}/100\n`;
+        content += `- **Average session:** ${summary.averageSessionTime}\n`;
+        content += `- **Top commands:** ${summary.topCommands.join(', ')}\n\n`;
+        
+        content += `## Vault Health Score: ${analytics.insights.vaultHealth.score}/100\n\n`;
+        analytics.insights.vaultHealth.factors.forEach(factor => {
+            content += `- **${factor.name}:** ${factor.score}/100 - ${factor.impact}\n`;
+        });
+        
+        content += `\n## Recommendations\n`;
+        analytics.recommendations.slice(0, 3).forEach((rec, i) => {
+            content += `${i + 1}. **${rec.title}** (${rec.priority} priority)\n`;
+            content += `   ${rec.description}\n`;
+            content += `   *Action:* ${rec.action}\n\n`;
+        });
+        
+        // Create temporary note to display analytics
+        this.app.vault.create(`Analytics Dashboard ${new Date().toISOString().split('T')[0]}.md`, content);
+        SmartNotice.success("Analytics dashboard created!");
+    }
+
+    private exportAnalyticsReport(): void {
+        const report = this.analyticsEngine.exportAnalyticsReport();
+        const fileName = `ElevenLabs Analytics Report ${new Date().toISOString().split('T')[0]}.md`;
+        
+        this.app.vault.create(fileName, report);
+        SmartNotice.success(`Analytics report exported to "${fileName}"`);
+    }
+
+    private clearAnalyticsData(): void {
+        // Show confirmation dialog
+        const confirmed = confirm("Are you sure you want to clear all analytics data? This action cannot be undone.");
+        if (confirmed) {
+            this.analyticsEngine.clearAnalyticsData();
+            SmartNotice.success("Analytics data cleared successfully");
+        }
+    }
+
+    // Plugin Integration Methods
+    private showPluginIntegrations(): void {
+        const capabilities = this.pluginIntegrations.getIntegrationCapabilities();
+        const health = this.pluginIntegrations.checkPluginHealth();
+        
+        let content = `# 🔌 Plugin Integrations Status\n\n`;
+        content += capabilities + '\n\n';
+        
+        content += `## Health Check\n`;
+        content += `**Status:** ${health.healthy ? '✅ Healthy' : '⚠️ Issues Found'}\n\n`;
+        
+        if (health.issues.length > 0) {
+            content += `### Issues:\n`;
+            health.issues.forEach(issue => content += `- ${issue}\n`);
+            content += '\n';
+        }
+        
+        if (health.recommendations.length > 0) {
+            content += `### Recommendations:\n`;
+            health.recommendations.forEach(rec => content += `- ${rec}\n`);
+        }
+        
+        // Create temporary note
+        this.app.vault.create(`Plugin Integrations Status ${new Date().toISOString().split('T')[0]}.md`, content);
+        SmartNotice.success("Plugin integrations status created!");
+    }
+
+    private refreshPluginIntegrations(): void {
+        this.pluginIntegrations.refreshIntegrations();
+        SmartNotice.success("Plugin integrations refreshed");
+    }
+
+    private async executeDataviewQuery(): void {
+        const query = prompt("Enter Dataview query:", "TABLE file.name AS Name, file.mtime AS Modified FROM \"\" SORT file.mtime DESC LIMIT 10");
+        if (query) {
+            const result = await this.pluginIntegrations.executeDataviewQuery(query);
+            
+            const content = `# Dataview Query Results\n\n**Query:** \`${query}\`\n\n${result}`;
+            this.app.vault.create(`Dataview Results ${Date.now()}.md`, content);
+            SmartNotice.success("Dataview query executed!");
+        }
+    }
+
+    private showAvailableTemplates(): void {
+        const templates = this.pluginIntegrations.getAvailableTemplates();
+        
+        const content = `# 📋 Available Templates\n\n${templates}`;
+        this.app.vault.create(`Available Templates ${new Date().toISOString().split('T')[0]}.md`, content);
+        SmartNotice.success("Templates list created!");
+    }
+
+    private async showTasksOverview(): void {
+        const filter = prompt("Enter task filter (optional):", "");
+        const tasks = await this.pluginIntegrations.getTasksQuery(filter || "");
+        
+        const content = `# ✅ Tasks Overview\n\n${tasks}`;
+        this.app.vault.create(`Tasks Overview ${new Date().toISOString().split('T')[0]}.md`, content);
+        SmartNotice.success("Tasks overview created!");
     }
 
     async onunload() {

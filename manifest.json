@@ -1,9 +1,9 @@
 {
 	"id": "elevenlabs-conversational-ai",
 	"name": "ElevenLabs Conversational AI Plugin",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Advanced AI-powered voice conversations with semantic search, conversation history, vault analysis, and intelligent note management for Obsidian",
+	"description": "Enterprise-grade AI assistant with advanced analytics, plugin integrations, mobile optimization, and intelligent knowledge management for professional Obsidian workflows",
 	"author": "Arti8",
 	"authorUrl": "https://arti8.com",
 	"fundingUrl": "https://arti8.com",
