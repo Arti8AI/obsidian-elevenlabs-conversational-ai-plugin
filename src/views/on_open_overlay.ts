@@ -2,14 +2,15 @@ import { App, Modal } from "obsidian";
 import { ConnectionManager, ConnectionCallbacks } from "../components/connections";
 import { SmartNotice } from "./notices";
 import { Conversation } from "@11labs/client";
+import { EnvironmentSettings } from "../components/env_settings";
 
 export class ConversationOverlay extends Modal {
     private connectionManager: ConnectionManager;
     private conversation: Conversation | null = null;
 
-    constructor(app: App, agentId: string) {
+    constructor(app: App, agentId: string, environmentSettings: EnvironmentSettings) {
         super(app);
-        this.connectionManager = new ConnectionManager(app, agentId);
+        this.connectionManager = new ConnectionManager(app, agentId, environmentSettings);
     }
 
     async onOpen() {
