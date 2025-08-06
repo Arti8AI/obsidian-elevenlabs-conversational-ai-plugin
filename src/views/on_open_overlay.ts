@@ -73,6 +73,7 @@ export class ConversationOverlay extends Modal {
             });
         } catch (error) {
             SmartNotice.error("Failed to start conversation");
+            // eslint-disable-next-line no-console
             console.error(error);
         }
     }
@@ -100,6 +101,7 @@ export class ConversationOverlay extends Modal {
 
     private handleError(error: any) {
         SmartNotice.error("Connection error occurred");
+        // eslint-disable-next-line no-console
         console.error("Conversation error:", error);
     }
 
